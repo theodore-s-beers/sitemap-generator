@@ -1,25 +1,26 @@
-const extendFilename = require('../extendFilename');
+import { describe, test, expect } from "vitest";
+import extendFilename from "../extendFilename.js";
 
-describe('#extendFilename', () => {
-  test('should be a function', () => {
+describe("#extendFilename", () => {
+  test("should be a function", () => {
     expect(extendFilename).toBeInstanceOf(Function);
   });
 
-  test('should return a string', () => {
-    const newFilename = extendFilename('sitemap.xml', '_part1');
+  test("should return a string", () => {
+    const newFilename = extendFilename("sitemap.xml", "_part1");
 
-    expect(typeof newFilename).toBe('string');
+    expect(typeof newFilename).toBe("string");
   });
 
-  test('should extend filename with string', () => {
-    const newFilename = extendFilename('sitemap.xml', '_part1');
+  test("should extend filename with string", () => {
+    const newFilename = extendFilename("sitemap.xml", "_part1");
 
-    expect(newFilename).toBe('sitemap_part1.xml');
+    expect(newFilename).toBe("sitemap_part1.xml");
   });
 
-  test('should extend filenames without extension', () => {
-    const newFilename = extendFilename('sitemap', '_part1');
+  test("should extend filenames without extension", () => {
+    const newFilename = extendFilename("sitemap", "_part1");
 
-    expect(newFilename).toBe('sitemap_part1');
+    expect(newFilename).toBe("sitemap_part1");
   });
 });

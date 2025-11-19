@@ -1,11 +1,11 @@
-const SitemapStream = require('./SitemapStream');
-const getCurrentDateTime = require('./helpers/getCurrentDateTime');
+import SitemapStream from "./SitemapStream.js";
+import getCurrentDateTime from "./helpers/getCurrentDateTime.js";
 
-module.exports = function SitemapRotator(
+export default function SitemapRotator(
   maxEntries,
   lastModEnabled,
   changeFreq,
-  priorityMap
+  priorityMap,
 ) {
   const sitemaps = [];
   let count = 0;
@@ -41,7 +41,7 @@ module.exports = function SitemapRotator(
       count = 0;
     }
 
-    let priority = '';
+    let priority = "";
 
     // if priorityMap exists, set priority based on depth
     // if depth is greater than map length, use the last value in the priorityMap
@@ -66,6 +66,6 @@ module.exports = function SitemapRotator(
   return {
     getPaths,
     addURL,
-    finish
+    finish,
   };
-};
+}

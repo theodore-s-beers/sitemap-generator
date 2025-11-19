@@ -88,7 +88,7 @@ const sitemap = generator.getSitemap()
 crawler.on('crawlstart', () => {
   sitemap.addURL('/my/static/url')
 })
-````
+```
 
 ### queueURL(url)
 
@@ -198,7 +198,7 @@ If provided, adds a `<priority>` line to each URL in the sitemap. Each value in 
 Example:
 
 ```javascript
-[1.0, 0.8, 0.6, 0.4, 0.2, 0]
+[1.0, 0.8, 0.6, 0.4, 0.2, 0];
 ```
 
 ### userAgent

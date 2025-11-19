@@ -1,25 +1,26 @@
-const stringifyURL = require('../stringifyURL');
+import { describe, test, expect } from "vitest";
+import stringifyURL from "../stringifyURL.js";
 
-describe('#stringifyURL', () => {
+describe("#stringifyURL", () => {
   const url = {
-    protocol: 'http',
-    host: 'example.com',
-    uriPath: '/test',
+    protocol: "http",
+    host: "example.com",
+    uriPath: "/test",
   };
 
-  test('should be a function', () => {
+  test("should be a function", () => {
     expect(stringifyURL).toBeInstanceOf(Function);
   });
 
-  test('should return a string', () => {
+  test("should return a string", () => {
     const str = stringifyURL(url);
 
-    expect(typeof str).toBe('string');
+    expect(typeof str).toBe("string");
   });
 
-  test('should create valid URL string', () => {
+  test("should create valid URL string", () => {
     const str = stringifyURL(url);
 
-    expect(str).toBe('http://example.com/test');
+    expect(str).toBe("http://example.com/test");
   });
 });

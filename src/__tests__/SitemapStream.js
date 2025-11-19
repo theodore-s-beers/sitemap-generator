@@ -1,32 +1,33 @@
-const SitemapStream = require('../SitemapStream');
+import { describe, test, expect } from "vitest";
+import SitemapStream from "../SitemapStream.js";
 
-describe('#SitemapStream', () => {
+describe("#SitemapStream", () => {
   const stream = SitemapStream();
 
-  test('should be a function', () => {
+  test("should be a function", () => {
     expect(SitemapStream).toBeInstanceOf(Function);
   });
 
-  describe('#getPath', () => {
-    test('should have getPath method', () => {
-      expect(stream).toHaveProperty('getPath');
+  describe("#getPath", () => {
+    test("should have getPath method", () => {
+      expect(stream).toHaveProperty("getPath");
     });
 
-    test('should return path string', () => {
+    test("should return path string", () => {
       const path = stream.getPath();
-      expect(typeof path).toBe('string');
+      expect(typeof path).toBe("string");
     });
   });
 
-  describe('#write', () => {
-    test('should have write method', () => {
-      expect(stream).toHaveProperty('write');
+  describe("#write", () => {
+    test("should have write method", () => {
+      expect(stream).toHaveProperty("write");
     });
   });
 
-  describe('#end', () => {
-    test('should have end method', () => {
-      expect(stream).toHaveProperty('end');
+  describe("#end", () => {
+    test("should have end method", () => {
+      expect(stream).toHaveProperty("end");
     });
   });
 });

@@ -1,28 +1,29 @@
-const escapeUnsafe = require('../escapeUnsafe');
+import { describe, test, expect } from "vitest";
+import escapeUnsafe from "../escapeUnsafe.js";
 
-describe('#escapeUnsafe', () => {
-  test('should be a function', () => {
+describe("#escapeUnsafe", () => {
+  test("should be a function", () => {
     expect(escapeUnsafe).toBeInstanceOf(Function);
   });
 
-  test('should escape < characters', () => {
-    const url = 'http://test.com/<>&\'"<>&\'"';
+  test("should escape < characters", () => {
+    const url = "http://test.com/<>&'\"<>&'\"";
     const escapedUrl = escapeUnsafe(url);
 
     expect(url).toMatch(/</);
     expect(escapedUrl).not.toMatch(/</);
   });
 
-  test('should escape > characters', () => {
-    const url = 'http://test.com/<>&\'"<>&\'"';
+  test("should escape > characters", () => {
+    const url = "http://test.com/<>&'\"<>&'\"";
     const escapedUrl = escapeUnsafe(url);
 
     expect(url).toMatch(/>/);
     expect(escapedUrl).not.toMatch(/>/);
   });
 
-  test('should escape & characters', () => {
-    const url = 'http://test.com/<>&\'"<>&\'"';
+  test("should escape & characters", () => {
+    const url = "http://test.com/<>&'\"<>&'\"";
     const escapedUrl = escapeUnsafe(url);
 
     expect(url).toMatch(/&/);
@@ -31,7 +32,7 @@ describe('#escapeUnsafe', () => {
   });
 
   test("should escape ' characters", () => {
-    const url = 'http://test.com/<>&\'"<>&\'"';
+    const url = "http://test.com/<>&'\"<>&'\"";
     const escapedUrl = escapeUnsafe(url);
 
     expect(url).toMatch(/'/);
@@ -39,7 +40,7 @@ describe('#escapeUnsafe', () => {
   });
 
   test('should escape " characters', () => {
-    const url = 'http://test.com/<>&\'"<>&\'"';
+    const url = "http://test.com/<>&'\"<>&'\"";
     const escapedUrl = escapeUnsafe(url);
 
     expect(url).toMatch(/"/);

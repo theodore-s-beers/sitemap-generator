@@ -1,7 +1,5 @@
-/* eslint no-bitwise:0 */
-
-module.exports = (fpath, str) => {
-  const ext = fpath.slice(((fpath.lastIndexOf('.') - 1) >>> 0) + 2);
+export default (fpath, str) => {
+  const ext = fpath.slice(((fpath.lastIndexOf(".") - 1) >>> 0) + 2);
 
   let newFilename;
 

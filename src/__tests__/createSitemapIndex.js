@@ -1,23 +1,24 @@
-const createSitemapIndex = require('../createSitemapIndex');
+import { describe, test, expect } from "vitest";
+import createSitemapIndex from "../createSitemapIndex.js";
 
-describe('#createSitemapIndex', () => {
-  const url = 'http://example.com';
-  const filename = 'sitemap.xml';
+describe("#createSitemapIndex", () => {
+  const url = "http://example.com";
+  const filename = "sitemap.xml";
   const count = 2;
 
-  test('should be a function', () => {
+  test("should be a function", () => {
     expect(createSitemapIndex).toBeInstanceOf(Function);
   });
 
-  test('should return string', () => {
+  test("should return string", () => {
     const sitemapIndex = createSitemapIndex(url, filename, count);
-    expect(typeof sitemapIndex).toBe('string');
+    expect(typeof sitemapIndex).toBe("string");
   });
 
-  test('should contain sitemap part url', () => {
+  test("should contain sitemap part url", () => {
     const sitemapIndex = createSitemapIndex(url, filename, count);
     const regex = new RegExp(
-      `${url.replace(/\/$/, '')}/sitemap_part${count}.xml`
+      `${url.replace(/\/$/, "")}/sitemap_part${count}.xml`,
     );
     expect(sitemapIndex).toMatch(regex);
   });

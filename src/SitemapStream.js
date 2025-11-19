@@ -1,23 +1,26 @@
-const path = require('path');
-const rand = require('crypto-random-string');
-const os = require('os');
-const fs = require('fs');
-const escapeUnsafe = require('./helpers/escapeUnsafe');
+import path from "path";
+import os from "os";
+import fs from "fs";
+import escapeUnsafe from "./helpers/escapeUnsafe.js";
+import crypto from "crypto";
 
-module.exports = function SitemapStream() {
-  const tmpPath = path.join(os.tmpdir(), `sitemap_${rand(10)}`);
+export default function SitemapStream() {
+  const tmpPath = path.join(
+    os.tmpdir(),
+    `sitemap_${crypto.randomBytes(5).toString("hex")}`,
+  );
   const stream = fs.createWriteStream(tmpPath);
 
   stream.write('<?xml version="1.0" encoding="utf-8" standalone="yes" ?>');
   stream.write(
-    '\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    '\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
   );
 
   const getPath = () => tmpPath;
 
   const write = (url, currentDateTime, changeFreq, priority) => {
     const escapedUrl = escapeUnsafe(url);
-    stream.write('\n  <url>\n');
+    stream.write("\n  <url>\n");
     stream.write(`    <loc>${escapedUrl}</loc>\n`);
     if (currentDateTime) {
       stream.write(`    <lastmod>${currentDateTime}</lastmod>\n`);
@@ -28,11 +31,11 @@ module.exports = function SitemapStream() {
     if (priority) {
       stream.write(`    <priority>${priority}</priority>\n`);
     }
-    stream.write('  </url>');
+    stream.write("  </url>");
   };
 
   const end = () => {
-    stream.write('\n</urlset>');
+    stream.write("\n</urlset>");
     stream.end();
   };
 
@@ -41,4 +44,4 @@ module.exports = function SitemapStream() {
     write,
     end,
   };
-};
+}

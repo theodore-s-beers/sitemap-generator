@@ -1,39 +1,36 @@
-const fs = require('fs');
-const http = require('http');
-const path = require('path');
-const parseURL = require('url-parse');
-const eachSeries = require('async/eachSeries');
-const cpFile = require('cp-file');
-const normalizeUrl = require('normalize-url');
-const mitt = require('mitt');
-const format = require('date-fns/format');
+import fs from "fs";
+import http from "http";
+import path from "path";
+import normalizeUrl from "normalize-url";
+import mitt from "mitt";
+import { format } from "date-fns";
 
-const createCrawler = require('./createCrawler');
-const SitemapRotator = require('./SitemapRotator');
-const createSitemapIndex = require('./createSitemapIndex');
-const extendFilename = require('./helpers/extendFilename');
-const validChangeFreq = require('./helpers/validChangeFreq');
+import createCrawler from "./createCrawler.js";
+import SitemapRotator from "./SitemapRotator.js";
+import createSitemapIndex from "./createSitemapIndex.js";
+import extendFilename from "./helpers/extendFilename.js";
+import validChangeFreq from "./helpers/validChangeFreq.js";
 
-module.exports = function SitemapGenerator(uri, opts) {
+export default function SitemapGenerator(uri, opts) {
   const defaultOpts = {
     stripQuerystring: true,
     maxEntriesPerFile: 50000,
     maxDepth: 0,
-    filepath: path.join(process.cwd(), 'sitemap.xml'),
-    userAgent: 'Node/SitemapGenerator',
+    filepath: path.join(process.cwd(), "sitemap.xml"),
+    userAgent: "Node/SitemapGenerator",
     respectRobotsTxt: true,
     ignoreInvalidSSL: true,
     timeout: 30000,
     decodeResponses: true,
     lastMod: false,
-    changeFreq: '',
+    changeFreq: "",
     priorityMap: [],
     ignoreAMP: true,
-    ignore: null
+    ignore: null,
   };
 
   if (!uri) {
-    throw new Error('Requires a valid URL.');
+    throw new Error("Requires a valid URL.");
   }
 
   const options = Object.assign({}, defaultOpts, opts);
@@ -45,135 +42,190 @@ module.exports = function SitemapGenerator(uri, opts) {
 
   const emitter = mitt();
 
-  const parsedUrl = parseURL(
+  const parsedUrl = new URL(
     normalizeUrl(uri, {
       stripWWW: false,
-      removeTrailingSlash: false
-    })
+      removeTrailingSlash: false,
+    }),
   );
 
   // only resolve if sitemap path is truthy (a string preferably)
   const sitemapPath = options.filepath && path.resolve(options.filepath);
 
   // we don't care about invalid certs
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-  const crawler = createCrawler(parsedUrl, options);
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
   // create sitemap stream
   const sitemap = SitemapRotator(
     options.maxEntriesPerFile,
     options.lastMod,
     options.changeFreq,
-    options.priorityMap
+    options.priorityMap,
   );
 
   const emitError = (code, url) => {
-    emitter.emit('error', {
+    emitter.emit("error", {
       code,
-      message: http.STATUS_CODES[code],
-      url
+      message: http.STATUS_CODES[code] || "Unknown error",
+      url,
     });
   };
 
-  crawler.on('fetch404', ({ url }) => emitError(404, url));
-  crawler.on('fetchtimeout', ({ url }) => emitError(408, url));
-  crawler.on('fetch410', ({ url }) => emitError(410, url));
-  crawler.on('fetcherror', (queueItem, response) =>
-    emitError(response.statusCode, queueItem.url)
-  );
+  // Set up crawler with handlers
+  const handlers = {
+    onSuccess: async ({ url, depth, headers, body, $ }) => {
+      // Check for noindex meta tag
+      const metaRobots = $('meta[name="robots"]');
+      const hasNoIndex =
+        metaRobots.length && /noindex/i.test(metaRobots.attr("content"));
 
-  crawler.on('fetchclienterror', (queueError, errorData) => {
-    if (errorData.code === 'ENOTFOUND') {
-      emitError(404, `Site ${JSON.stringify(queueError)} could not be found. REQUEST: ${JSON.stringify(errorData)}`);
-    } else {
-      emitError(400, errorData.message);
-    }
-  });
+      // Check for AMP
+      const isAMP = options.ignoreAMP && /<html[^>]+(amp|⚡)[^>]*>/.test(body);
 
-  crawler.on('fetchdisallowed', ({ url }) => emitter.emit('ignore', url));
+      // Check custom ignore function
+      const shouldIgnore =
+        (opts.ignore && opts.ignore(url)) || hasNoIndex || isAMP;
 
-  // fetch complete event
-  crawler.on('fetchcomplete', (queueItem, page) => {
-    const { url, depth } = queueItem;
+      if (shouldIgnore) {
+        emitter.emit("ignore", url);
+      } else {
+        emitter.emit("add", url);
 
-    if (
-      (opts.ignore && opts.ignore(url)) ||
-      /(<meta(?=[^>]+noindex).*?>)/.test(page) || // check if robots noindex is present
-      (options.ignoreAMP && /<html[^>]+(amp|⚡)[^>]*>/.test(page)) // check if it's an amp page
-    ) {
-      emitter.emit('ignore', url);
-    } else {
-      emitter.emit('add', url);
-
-      if (sitemapPath !== null) {
-        // eslint-disable-next-line
-        const lastMod = queueItem.stateData.headers['last-modified'];
-        sitemap.addURL(url, depth, lastMod && format(lastMod, 'YYYY-MM-DD'));
+        if (sitemapPath !== null) {
+          const lastMod = headers["last-modified"];
+          sitemap.addURL(
+            url,
+            depth,
+            lastMod && format(new Date(lastMod), "yyyy-MM-dd"),
+          );
+        }
       }
-    }
-  });
 
-  crawler.on('complete', () => {
-    sitemap.finish();
+      // Extract and queue links if not at max depth
+      if (options.maxDepth === 0 || depth < options.maxDepth) {
+        const links = [];
+        $("a[href]").each((_, el) => {
+          const href = $(el).attr("href");
+          if (href) {
+            try {
+              const absoluteUrl = new URL(href, url).href;
+              links.push(absoluteUrl);
+            } catch {
+              // Invalid URL, skip
+            }
+          }
+        });
 
-    const sitemaps = sitemap.getPaths();
+        // Add discovered links to queue
+        for (const link of links) {
+          await crawler.addRequests([
+            {
+              url: link,
+              userData: { depth: depth + 1 },
+            },
+          ]);
+        }
+      }
+    },
 
-    const cb = () => emitter.emit('done');
+    onError: ({ url, statusCode, error }) => {
+      if (statusCode === 404) {
+        emitError(404, url);
+      } else if (statusCode === 410) {
+        emitError(410, url);
+      } else if (error?.code === "ENOTFOUND") {
+        emitError(404, url);
+      } else if (error?.name === "TimeoutError") {
+        emitError(408, url);
+      } else {
+        emitError(statusCode || 500, url);
+      }
+    },
+  };
 
-    if (sitemapPath !== null) {
-      // move files
-      if (sitemaps.length > 1) {
-        // multiple sitemaps
-        let count = 1;
-        eachSeries(
-          sitemaps,
-          (tmpPath, done) => {
-            const newPath = extendFilename(sitemapPath, `_part${count}`);
+  const crawler = createCrawler(parsedUrl, options, handlers);
 
-            // copy and remove tmp file
-            cpFile(tmpPath, newPath).then(() => {
-              fs.unlink(tmpPath, () => {
-                done();
-              });
-            });
+  let isRunning = false;
 
-            count += 1;
+  return {
+    start: async () => {
+      if (isRunning) return;
+      isRunning = true;
+
+      try {
+        // Start crawling from the initial URL
+        await crawler.run([
+          {
+            url: parsedUrl.href,
+            userData: { depth: 0 },
           },
-          () => {
+        ]);
+
+        // Crawl complete - finalize sitemap
+        sitemap.finish();
+
+        const sitemaps = sitemap.getPaths();
+
+        const cb = () => emitter.emit("done");
+
+        if (sitemapPath !== null) {
+          // move files
+          if (sitemaps.length > 1) {
+            // multiple sitemaps
+            let count = 1;
+            for (const tmpPath of sitemaps) {
+              const newPath = extendFilename(sitemapPath, `_part${count}`);
+              await fs.promises.copyFile(tmpPath, newPath);
+              await fs.promises.unlink(tmpPath);
+              count += 1;
+            }
+
+            // Write the sitemap index file
             const filename = path.basename(sitemapPath);
-            fs.writeFile(
+            await fs.promises.writeFile(
               sitemapPath,
               createSitemapIndex(
                 parsedUrl.toString(),
                 filename,
-                sitemaps.length
+                sitemaps.length,
               ),
-              cb
             );
+            cb();
+          } else if (sitemaps.length) {
+            await fs.promises.copyFile(sitemaps[0], sitemapPath);
+            await fs.promises.unlink(sitemaps[0]);
+            cb();
+          } else {
+            cb();
           }
-        );
-      } else if (sitemaps.length) {
-        cpFile(sitemaps[0], sitemapPath).then(() => {
-          fs.unlink(sitemaps[0], cb);
-        });
-      } else {
-        cb();
+        } else {
+          cb();
+        }
+      } catch (error) {
+        emitter.emit("error", error);
+      } finally {
+        isRunning = false;
       }
-    } else {
-      cb();
-    }
-  });
+    },
 
-  return {
-    start: () => crawler.start(),
-    stop: () => crawler.stop(),
+    stop: async () => {
+      // Crawlee doesn't have a graceful stop, but we can track the state
+      isRunning = false;
+    },
+
     getCrawler: () => crawler,
     getSitemap: () => sitemap,
-    queueURL: url => {
-      crawler.queueURL(url, undefined, false);
+
+    queueURL: async (url) => {
+      await crawler.addRequests([
+        {
+          url,
+          userData: { depth: 0 },
+        },
+      ]);
     },
+
     on: emitter.on,
-    off: emitter.off
+    off: emitter.off,
   };
-};
+}
