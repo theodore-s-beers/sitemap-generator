@@ -108,8 +108,21 @@ export default function SitemapGenerator(uri, opts) {
           const href = $(el).attr("href");
           if (href) {
             try {
-              const absoluteUrl = new URL(href, url).href;
-              links.push(absoluteUrl);
+              const absoluteUrl = new URL(href, url);
+
+              // Only add links from the same domain
+              if (absoluteUrl.hostname !== parsedUrl.hostname) {
+                return;
+              }
+
+              // Respect initial path restriction
+              if (parsedUrl.pathname && parsedUrl.pathname !== "/") {
+                if (!absoluteUrl.pathname.startsWith(parsedUrl.pathname)) {
+                  return;
+                }
+              }
+
+              links.push(absoluteUrl.href);
             } catch {
               // Invalid URL, skip
             }
