@@ -15,7 +15,6 @@ export default function SitemapGenerator(uri, opts) {
   const defaultOpts = {
     stripQuerystring: true,
     maxEntriesPerFile: 50000,
-    maxDepth: 0,
     filepath: path.join(process.cwd(), "sitemap.xml"),
     userAgent: "Node/SitemapGenerator",
     respectRobotsTxt: true,
@@ -101,43 +100,41 @@ export default function SitemapGenerator(uri, opts) {
         }
       }
 
-      // Extract and queue links if not at max depth
-      if (options.maxDepth === 0 || depth < options.maxDepth) {
-        const links = [];
-        $("a[href]").each((_, el) => {
-          const href = $(el).attr("href");
-          if (href) {
-            try {
-              const absoluteUrl = new URL(href, url);
+      // Extract and queue links (no depth limit check)
+      const links = [];
+      $("a[href]").each((_, el) => {
+        const href = $(el).attr("href");
+        if (href) {
+          try {
+            const absoluteUrl = new URL(href, url);
 
-              // Only add links from the same domain
-              if (absoluteUrl.hostname !== parsedUrl.hostname) {
+            // Only add links from the same domain
+            if (absoluteUrl.hostname !== parsedUrl.hostname) {
+              return;
+            }
+
+            // Respect initial path restriction
+            if (parsedUrl.pathname && parsedUrl.pathname !== "/") {
+              if (!absoluteUrl.pathname.startsWith(parsedUrl.pathname)) {
                 return;
               }
-
-              // Respect initial path restriction
-              if (parsedUrl.pathname && parsedUrl.pathname !== "/") {
-                if (!absoluteUrl.pathname.startsWith(parsedUrl.pathname)) {
-                  return;
-                }
-              }
-
-              links.push(absoluteUrl.href);
-            } catch {
-              // Invalid URL, skip
             }
-          }
-        });
 
-        // Add discovered links to queue
-        for (const link of links) {
-          await crawler.addRequests([
-            {
-              url: link,
-              userData: { depth: depth + 1 },
-            },
-          ]);
+            links.push(absoluteUrl.href);
+          } catch {
+            // Invalid URL, skip
+          }
         }
+      });
+
+      // Add discovered links to queue
+      for (const link of links) {
+        await crawler.addRequests([
+          {
+            url: link,
+            userData: { depth: depth + 1 },
+          },
+        ]);
       }
     },
 
