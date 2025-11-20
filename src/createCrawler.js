@@ -1,4 +1,4 @@
-import { CheerioCrawler, Configuration } from "crawlee";
+import { CheerioCrawler, Configuration, MemoryStorage } from "crawlee";
 
 export default (uri, options = {}, handlers = {}) => {
   // excluded filetypes
@@ -32,18 +32,8 @@ export default (uri, options = {}, handlers = {}) => {
 
   const extRegex = new RegExp(`\\.(${exclude})$`, "i");
 
-  // Handle deprecated option
-  if (options.crawlerMaxDepth) {
-    console.warn(
-      'Option "crawlerMaxDepth" is deprecated. Please use "maxDepth".',
-    );
-    if (!options.maxDepth) {
-      options.maxDepth = options.crawlerMaxDepth;
-    }
-  }
-
-  // Configure crawlee to be less noisy and use temp storage
-  Configuration.getGlobalConfig().set("purgeOnStart", true);
+  const storageClient = new MemoryStorage();
+  Configuration.getGlobalConfig().set("storageClient", storageClient);
 
   const crawler = new CheerioCrawler({
     maxRequestsPerCrawl: options.maxRequestsPerCrawl || Infinity,
@@ -109,7 +99,6 @@ export default (uri, options = {}, handlers = {}) => {
   // Store metadata for compatibility
   crawler._uri = uri;
   crawler._options = options;
-  crawler._maxDepth = options.maxDepth || 0;
 
   return crawler;
 };
