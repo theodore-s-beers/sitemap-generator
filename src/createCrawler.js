@@ -1,4 +1,4 @@
-import { CheerioCrawler, Configuration, MemoryStorage } from "crawlee";
+import { CheerioCrawler, Configuration } from "crawlee";
 
 export default (uri, options = {}, handlers = {}) => {
   // excluded filetypes
@@ -32,8 +32,7 @@ export default (uri, options = {}, handlers = {}) => {
 
   const extRegex = new RegExp(`\\.(${exclude})$`, "i");
 
-  const storageClient = new MemoryStorage();
-  Configuration.getGlobalConfig().set("storageClient", storageClient);
+  Configuration.getGlobalConfig().set("persistStorage", false);
 
   const crawler = new CheerioCrawler({
     maxRequestsPerCrawl: options.maxRequestsPerCrawl ?? Infinity,
