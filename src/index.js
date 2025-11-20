@@ -13,6 +13,7 @@ export default function SitemapGenerator(uri, opts) {
   const defaultOpts = {
     stripQuerystring: true,
     maxEntriesPerFile: 50000,
+    maxDepth: 0, // 0 = unlimited
     filepath: path.join(process.cwd(), "sitemap.xml"),
     userAgent: "Node/SitemapGenerator",
     respectRobotsTxt: true,
@@ -75,11 +76,11 @@ export default function SitemapGenerator(uri, opts) {
         emitter.emit("add", url);
 
         if (sitemapPath !== null) {
-          sitemap.addURL(url, depth);
+          sitemap.addURL(url);
         }
       }
 
-      // Extract and queue links (no depth limit check)
+      // Extract and queue links
       const links = [];
       $("a[href]").each((_, el) => {
         const href = $(el).attr("href");
@@ -108,12 +109,15 @@ export default function SitemapGenerator(uri, opts) {
 
       // Add discovered links to queue
       if (links.length) {
-        await crawler.addRequests(
-          links.map((link) => ({
-            url: link,
-            userData: { depth: depth + 1 },
-          })),
-        );
+        const nextDepth = depth + 1;
+        if (options.maxDepth === 0 || nextDepth <= options.maxDepth) {
+          await crawler.addRequests(
+            links.map((link) => ({
+              url: link,
+              userData: { depth: nextDepth },
+            })),
+          );
+        }
       }
     },
 
