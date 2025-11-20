@@ -1,71 +1,44 @@
 import SitemapStream from "./SitemapStream.js";
-import getCurrentDateTime from "./helpers/getCurrentDateTime.js";
 
-export default function SitemapRotator(
-  maxEntries,
-  lastModEnabled,
-  changeFreq,
-  priorityMap,
-) {
+export default function SitemapRotator(maxEntries) {
   const sitemaps = [];
   let count = 0;
   let current = null;
 
-  // return temp sitemap paths
-  const getPaths = () =>
-    sitemaps.reduce((arr, map) => {
-      arr.push(map.getPath());
-      return arr;
-    }, []);
+  const getPaths = () => sitemaps.map((map) => map.getPath());
 
-  // adds url to stream
-  const addURL = (url, depth, lastMod = getCurrentDateTime()) => {
-    const currentDateTime = lastModEnabled ? lastMod : null;
-
-    // exclude existing sitemap.xml
-    if (/sitemap\.xml$/.test(url)) {
-      return;
-    }
-
-    // create stream if none exists
+  const ensureStream = () => {
     if (current === null) {
       current = SitemapStream();
       sitemaps.push(current);
+      count = 0;
     }
+  };
 
-    // rotate stream
+  const rotateIfNeeded = () => {
     if (count === maxEntries) {
       current.end();
       current = SitemapStream();
       sitemaps.push(current);
       count = 0;
     }
+  };
 
-    let priority = "";
-
-    // if priorityMap exists, set priority based on depth
-    // if depth is greater than map length, use the last value in the priorityMap
-    if (priorityMap && priorityMap.length > 0) {
-      priority = priorityMap[depth - 1]
-        ? priorityMap[depth - 1]
-        : priorityMap[priorityMap.length - 1];
+  const addURL = (url) => {
+    if (/sitemap\.xml$/i.test(url)) {
+      return;
     }
 
-    current.write(url, currentDateTime, changeFreq, priority);
+    ensureStream();
+    rotateIfNeeded();
 
+    current.write(url);
     count += 1;
   };
 
-  // close stream
   const finish = () => {
-    if (current) {
-      current.end();
-    }
+    if (current) current.end();
   };
 
-  return {
-    getPaths,
-    addURL,
-    finish,
-  };
+  return { getPaths, addURL, finish };
 }

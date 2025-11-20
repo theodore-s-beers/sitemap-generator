@@ -1,8 +1,9 @@
 import path from "path";
 import os from "os";
 import fs from "fs";
-import escapeUnsafe from "./helpers/escapeUnsafe.js";
 import crypto from "crypto";
+
+import escapeUnsafe from "./helpers/escapeUnsafe.js";
 
 export default function SitemapStream() {
   const tmpPath = path.join(
@@ -18,19 +19,11 @@ export default function SitemapStream() {
 
   const getPath = () => tmpPath;
 
-  const write = (url, currentDateTime, changeFreq, priority) => {
+  const write = (url) => {
     const escapedUrl = escapeUnsafe(url);
+
     stream.write("\n  <url>\n");
     stream.write(`    <loc>${escapedUrl}</loc>\n`);
-    if (currentDateTime) {
-      stream.write(`    <lastmod>${currentDateTime}</lastmod>\n`);
-    }
-    if (changeFreq) {
-      stream.write(`    <changefreq>${changeFreq}</changefreq>\n`);
-    }
-    if (priority) {
-      stream.write(`    <priority>${priority}</priority>\n`);
-    }
     stream.write("  </url>");
   };
 
@@ -39,9 +32,5 @@ export default function SitemapStream() {
     stream.end();
   };
 
-  return {
-    getPath,
-    write,
-    end,
-  };
+  return { getPath, write, end };
 }

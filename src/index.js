@@ -3,13 +3,11 @@ import http from "http";
 import path from "path";
 import normalizeUrl from "normalize-url";
 import mitt from "mitt";
-import { format } from "date-fns";
 
 import createCrawler from "./createCrawler.js";
 import SitemapRotator from "./SitemapRotator.js";
 import createSitemapIndex from "./createSitemapIndex.js";
 import extendFilename from "./helpers/extendFilename.js";
-import validChangeFreq from "./helpers/validChangeFreq.js";
 
 export default function SitemapGenerator(uri, opts) {
   const defaultOpts = {
@@ -18,12 +16,9 @@ export default function SitemapGenerator(uri, opts) {
     filepath: path.join(process.cwd(), "sitemap.xml"),
     userAgent: "Node/SitemapGenerator",
     respectRobotsTxt: true,
-    ignoreInvalidSSL: true,
+    ignoreInvalidSSL: false,
     timeout: 30000,
     decodeResponses: true,
-    lastMod: false,
-    changeFreq: "",
-    priorityMap: [],
     ignoreAMP: true,
     ignore: null,
   };
@@ -34,11 +29,6 @@ export default function SitemapGenerator(uri, opts) {
 
   const options = Object.assign({}, defaultOpts, opts);
 
-  // if changeFreq option was passed, check to see if the value is valid
-  if (opts && opts.changeFreq) {
-    options.changeFreq = validChangeFreq(opts.changeFreq);
-  }
-
   const emitter = mitt();
 
   const parsedUrl = new URL(
@@ -48,19 +38,14 @@ export default function SitemapGenerator(uri, opts) {
     }),
   );
 
-  // only resolve if sitemap path is truthy (a string preferably)
-  const sitemapPath = options.filepath && path.resolve(options.filepath);
+  const sitemapPath = options.filepath ? path.resolve(options.filepath) : null;
 
-  // we don't care about invalid certs
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  if (options.ignoreInvalidSSL) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
 
   // create sitemap stream
-  const sitemap = SitemapRotator(
-    options.maxEntriesPerFile,
-    options.lastMod,
-    options.changeFreq,
-    options.priorityMap,
-  );
+  const sitemap = SitemapRotator(options.maxEntriesPerFile);
 
   const emitError = (code, url) => {
     emitter.emit("error", {
@@ -72,7 +57,7 @@ export default function SitemapGenerator(uri, opts) {
 
   // Set up crawler with handlers
   const handlers = {
-    onSuccess: async ({ url, depth, headers, body, $ }) => {
+    onSuccess: async ({ url, depth, body, $ }) => {
       // Check for noindex meta tag
       const metaRobots = $('meta[name="robots"]');
       const hasNoIndex =
@@ -82,8 +67,7 @@ export default function SitemapGenerator(uri, opts) {
       const isAMP = options.ignoreAMP && /<html[^>]+(amp|⚡)[^>]*>/.test(body);
 
       // Check custom ignore function
-      const shouldIgnore =
-        (opts.ignore && opts.ignore(url)) || hasNoIndex || isAMP;
+      const shouldIgnore = options.ignore?.(url) || hasNoIndex || isAMP;
 
       if (shouldIgnore) {
         emitter.emit("ignore", url);
@@ -91,12 +75,7 @@ export default function SitemapGenerator(uri, opts) {
         emitter.emit("add", url);
 
         if (sitemapPath !== null) {
-          const lastMod = headers["last-modified"];
-          sitemap.addURL(
-            url,
-            depth,
-            lastMod && format(new Date(lastMod), "yyyy-MM-dd"),
-          );
+          sitemap.addURL(url, depth);
         }
       }
 
@@ -128,13 +107,13 @@ export default function SitemapGenerator(uri, opts) {
       });
 
       // Add discovered links to queue
-      for (const link of links) {
-        await crawler.addRequests([
-          {
+      if (links.length) {
+        await crawler.addRequests(
+          links.map((link) => ({
             url: link,
             userData: { depth: depth + 1 },
-          },
-        ]);
+          })),
+        );
       }
     },
 
@@ -216,11 +195,6 @@ export default function SitemapGenerator(uri, opts) {
       } finally {
         isRunning = false;
       }
-    },
-
-    stop: async () => {
-      // Crawlee doesn't have a graceful stop, but we can track the state
-      isRunning = false;
     },
 
     getCrawler: () => crawler,

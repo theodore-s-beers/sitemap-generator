@@ -1,17 +1,18 @@
 import extendFilename from "./helpers/extendFilename.js";
 
 export default (url, filename, sitemapCount) => {
-  let sitemapIndex =
-    '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+  const base = url.replace(/\/$/, "");
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  ];
 
   for (let i = 1; i <= sitemapCount; i += 1) {
-    // generate sitemap part url
     const newFilename = extendFilename(filename, `_part${i}`);
-
-    const sitemapUrl = `${url.replace(/\/$/, "")}/${newFilename}`;
-    sitemapIndex += `\n  <sitemap>\n    <loc>${sitemapUrl}</loc>\n  </sitemap>`;
+    const sitemapUrl = `${base}/${newFilename}`;
+    lines.push("  <sitemap>", `    <loc>${sitemapUrl}</loc>`, "  </sitemap>");
   }
-  sitemapIndex += "\n</sitemapindex>";
 
-  return sitemapIndex;
+  lines.push("</sitemapindex>");
+  return lines.join("\n");
 };

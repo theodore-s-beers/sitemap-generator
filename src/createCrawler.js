@@ -36,13 +36,13 @@ export default (uri, options = {}, handlers = {}) => {
   Configuration.getGlobalConfig().set("storageClient", storageClient);
 
   const crawler = new CheerioCrawler({
-    maxRequestsPerCrawl: options.maxRequestsPerCrawl || Infinity,
-    maxConcurrency: options.maxConcurrency || 10,
-    requestHandlerTimeoutSecs: (options.timeout || 30000) / 1000,
+    maxRequestsPerCrawl: options.maxRequestsPerCrawl ?? Infinity,
+    maxConcurrency: options.maxConcurrency ?? 10,
+    requestHandlerTimeoutSecs: (options.timeout ?? 30000) / 1000,
     maxRequestRetries: 1,
 
-    // Respect robots.txt if option is set
-    ignoreSslErrors: options.ignoreInvalidSSL !== false,
+    respectRobotsTxtFile: options.respectRobotsTxt ?? true,
+    ignoreSslErrors: !!options.ignoreInvalidSSL,
 
     async requestHandler({ request, response, $ }) {
       if (handlers.onSuccess) {
@@ -73,15 +73,14 @@ export default (uri, options = {}, handlers = {}) => {
         const url = new URL(request.url);
 
         // File type exclusion
-        if (url.pathname.match(extRegex)) {
+        if (extRegex.test(url.pathname)) {
           request.skipNavigation = true;
           return;
         }
 
         // Restrict to initial path if provided
-        if (uri.pathname && uri.pathname !== "/") {
-          const initialURLRegex = new RegExp(`^${uri.pathname}`);
-          if (!url.pathname.match(initialURLRegex)) {
+        if (uri.pathname !== "/") {
+          if (!url.pathname.startsWith(uri.pathname)) {
             request.skipNavigation = true;
             return;
           }
@@ -95,10 +94,6 @@ export default (uri, options = {}, handlers = {}) => {
       },
     ],
   });
-
-  // Store metadata for compatibility
-  crawler._uri = uri;
-  crawler._options = options;
 
   return crawler;
 };
