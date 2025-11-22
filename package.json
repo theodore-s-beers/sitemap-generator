@@ -1,7 +1,20 @@
 {
-  "name": "sitemap-generator",
+  "name": "@t6e/sitemap-generator",
   "version": "0.1.0",
   "description": "Easily create XML sitemaps for your website",
+  "keywords": [
+    "sitemap",
+    "xml",
+    "sitemap.xml",
+    "generator",
+    "crawler",
+    "seo",
+    "google"
+  ],
+  "homepage": "https://github.com/theodore-s-beers/sitemap-generator#readme",
+  "bugs": {
+    "url": "https://github.com/theodore-s-beers/sitemap-generator/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/theodore-s-beers/sitemap-generator"
@@ -10,6 +23,11 @@
   "author": "Theodore Beers",
   "type": "module",
   "main": "src/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "format": "prettier --write .",
     "knip": "knip",
@@ -30,5 +48,8 @@
     "prettier": "3.6.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.10"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
