@@ -31,7 +31,7 @@
   "scripts": {
     "format": "prettier --write .",
     "knip": "knip",
-    "lint": "eslint .",
+    "lint": "prettier --check . && eslint .",
     "test": "vitest run"
   },
   "dependencies": {
