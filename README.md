@@ -2,145 +2,194 @@
 
 > Easily create XML sitemaps for your website.
 
-Generates a sitemap by crawling your site. Uses streams to efficiently write the sitemap to your drive and runs asynchronously to avoid blocking the thread. Is cappable of creating multiple sitemaps if threshold is reached. Respects robots.txt and meta tags.
+Generates a sitemap by crawling your site. Uses streams to efficiently write the sitemap to your drive and runs asynchronously to avoid blocking the thread. Creates multiple sitemaps if the threshold is reached. Respects `robots.txt` and meta tags.
 
-This package is not meant to be used in a production code base directly, but rather on the deployed product. This means you develop your app/website as usual, deploy it and create the sitemap with this tool _afterwards_. The simplest way is to use the [CLI](https://github.com/lgraubner/sitemap-generator-cli) (this is a different package!) to create the sitemap on the command line. If you have a more advanced usecase or want to adjust the crawler behavior you should use the programmtic version (this package). Create the crawler as needed and simply run it via `node mycrawler.js`.
+## About This Fork
 
-## Table of contents
+This is a maintained and modernized fork of the original [`sitemap-generator`](https://github.com/lgraubner/sitemap-generator) by Lars Graubner. The original project has not been maintained since ca. 2021. This fork includes:
 
-- [Install](#install)
-- [Usage](#usage)
-- [API](#api)
-- [Options](#options)
-- [Events](#events)
+- Migration to ESM (ES modules)
+- Replacement of deprecated `simplecrawler` with modern `crawlee`
+- Updated dependencies and security fixes
+- Modern development setup with Vitest, ESLint 9, and Prettier
+
+All credit for the original concept and implementation goes to Lars Graubner. This fork maintains the same MIT license.
 
 ## Install
 
-This module is available on [npm](https://www.npmjs.com/).
+This package is available on [npm](https://www.npmjs.com/).
 
-```
-$ npm install -S sitemap-generator
+```sh
+npm install @t6e/sitemap-generator
 ```
 
-This module is running only with Node.js and is not meant to be used in the browser.
+NB, this module runs only with Node.js (`>=20.0.0`) and is not meant to be used in the browser.
 
 ## Usage
 
 ```js
-const SitemapGenerator = require("sitemap-generator");
+import SitemapGenerator from "@t6e/sitemap-generator";
 
-// create generator
+// Create generator
 const generator = SitemapGenerator("http://example.com", {
   stripQuerystring: false,
 });
 
-// register event listeners
+// Register event listeners
 generator.on("done", () => {
-  // sitemaps created
+  console.log("Sitemap created!");
 });
 
-// start the crawler
+generator.on("add", (url) => {
+  console.log("Added:", url);
+});
+
+// Start the crawler
 generator.start();
 ```
 
-The crawler will fetch all folder URL pages and file types [parsed by Google](https://support.google.com/webmasters/answer/35287?hl=en). If present the `robots.txt` will be taken into account and possible rules are applied for each URL to consider if it should be added to the sitemap. Also the crawler will not fetch URL's from a page if the robots meta tag with the value `nofollow` is present and ignore them completely if `noindex` rule is present. The crawler is able to apply the `base` value to found links.
+The crawler will fetch HTML pages and other file types [parsed by Google](https://support.google.com/webmasters/answer/35287?hl=en). If present, the `robots.txt` file will be taken into account, with rules applied to each URL to consider if it should be added to the sitemap. The crawler will not fetch URLs from a page if the `robots` meta tag with the value `nofollow` is present, and will ignore a page completely if the `noindex` rule is present.
 
 ## API
 
-The generator offers straightforward methods to start and stop it. You can also add URL's manually.
+The generator offers straightforward methods to start the crawler and manage URLs.
 
-### start()
+### `start()`
 
-Starts crawler asynchronously and writes sitemap to disk.
-
-### stop()
-
-Stops the running crawler and halts the sitemap generation.
-
-### getCrawler()
-
-Returns the crawler instance. For more information about the crawler check the [simplecrawler docs](https://github.com/simplecrawler/simplecrawler#readme).
-
-This can be useful to ignore certain sites and don't add them to the sitemap.
+Starts the crawler asynchronously and writes the sitemap to disk.
 
 ```js
-const crawler = generator.getCrawler();
-crawler.addFetchCondition((queueItem, referrerQueueItem, callback) => {
-  callback(null, !queueItem.path.match(/myregex/));
-});
+await generator.start();
 ```
 
-### getSitemap()
+### `getCrawler()`
 
-Returns the sitemap instance (`SitemapRotator`).
-
-This can be useful to add static URLs to the sitemap:
+Returns the underlying [Crawlee](https://crawlee.dev/) crawler instance. This can be useful for advanced configuration.
 
 ```js
 const crawler = generator.getCrawler();
+```
+
+### `getSitemap()`
+
+Returns the sitemap instance (`SitemapRotator`). This can be useful to add static URLs to the sitemap:
+
+```js
 const sitemap = generator.getSitemap();
-
-// Add static URL on crawl init.
-crawler.on("crawlstart", () => {
-  sitemap.addURL("/my/static/url");
-});
+sitemap.addURL("/my/static/url");
 ```
 
-### queueURL(url)
+### `queueURL(url)`
 
-Add a URL to crawler's queue. Useful to help crawler fetch pages it can't find itself.
+Add a URL to the crawler's queue. Useful to help the crawler fetch pages it can't find itself.
+
+```js
+await generator.queueURL("http://example.com/hidden-page");
+```
+
+### `on(event, handler)` / `off(event, handler)`
+
+Register or unregister event listeners. See [Events](#events) section below.
+
+```js
+generator.on("add", (url) => console.log(url));
+```
 
 ## Options
 
-There are a couple of options to adjust the sitemap output. In addition to the options beneath the options of the used crawler can be changed. For a complete list please check it's [official documentation](https://github.com/simplecrawler/simplecrawler#configuration).
+Configure the sitemap generator by passing an options object as the second argument.
 
 ```js
-var generator = SitemapGenerator("http://example.com", {
+const generator = SitemapGenerator("http://example.com", {
   maxDepth: 0,
   filepath: "./sitemap.xml",
   maxEntriesPerFile: 50000,
   stripQuerystring: true,
+  userAgent: "Node/SitemapGenerator",
+  timeout: 30000,
 });
 ```
 
-### filepath
+### `filepath`
 
 Type: `string`  
 Default: `./sitemap.xml`
 
-Filepath for the new sitemap. If multiple sitemaps are created "part\_$index" is appended to each filename. If you don't want to write a file at all you can pass `null` as filepath.
+Filepath for the new sitemap. If multiple sitemaps are created, `_part1`, `_part2`, etc. are appended to each filename. If you don't want to write files at all, you can pass `null` as the filepath.
 
-### ignore(url)
-
-Apply a test condition to a URL before it's added to the sitemap.
-
-Type: `function`  
-Default: `null`
-
-Example:
-
-```js
-const generator = SitemapGenerator(url, {
-  ignore: (url) => {
-    // Prevent URLs from being added that contain `<pattern>`.
-    return /<pattern>/g.test(url);
-  },
-});
-```
-
-### maxEntriesPerFile
+### `maxEntriesPerFile`
 
 Type: `number`  
 Default: `50000`
 
-Google limits the maximum number of URLs in one sitemap to 50000. If this limit is reached the sitemap-generator creates another sitemap. A sitemap index file will be created as well.
+Google limits the maximum number of URLs in one sitemap to 50,000. If this limit is reached, the sitemap-generator creates multiple sitemaps and a sitemap index file.
 
-### userAgent
+### `stripQuerystring`
+
+Type: `boolean`  
+Default: `true`
+
+Whether to strip query strings from URLs before adding them to the sitemap.
+
+### `maxDepth`
+
+Type: `number`  
+Default: `0` (i.e., unlimited)
+
+Maximum crawl depth. Set to `0` for unlimited depth, or specify a number to limit how many levels deep the crawler will go.
+
+### `userAgent`
 
 Type: `string`  
 Default: `Node/SitemapGenerator`
 
-Change the default crawler user agent.
+The user agent string to use when crawling.
+
+### `respectRobotsTxt`
+
+Type: `boolean`  
+Default: `true`
+
+Whether to respect `robots.txt` rules.
+
+### `ignoreInvalidSSL`
+
+Type: `boolean`  
+Default: `false`
+
+Whether to ignore invalid SSL certificates.
+
+### `timeout`
+
+Type: `number`  
+Default: `30000` (i.e., 30 seconds)
+
+Request timeout in milliseconds.
+
+### `ignoreAMP`
+
+Type: `boolean`  
+Default: `true`
+
+Whether to ignore AMP (Accelerated Mobile Pages) versions of pages.
+
+### `ignore(url)`
+
+Type: `function`  
+Default: `null`
+
+A custom function to determine if a URL should be ignored. Return `true` to ignore the URL.
+
+Example:
+
+```js
+const generator = SitemapGenerator("http://example.com", {
+  ignore: (url) => {
+    // Ignore URLs containing "admin"
+    return url.includes("/admin/");
+  },
+});
+```
 
 ## Events
 
@@ -148,41 +197,41 @@ The Sitemap Generator emits several events which can be listened to.
 
 ### `add`
 
-Triggered when the crawler successfully added a resource to the sitemap. Passes the url as argument.
+Triggered when the crawler successfully adds a URL to the sitemap.
 
 ```js
 generator.on("add", (url) => {
-  // log url
+  console.log("Added:", url);
 });
 ```
 
 ### `done`
 
-Triggered when the crawler finished and the sitemap is created.
+Triggered when the crawler finishes and the sitemap is created.
 
 ```js
 generator.on("done", () => {
-  // sitemaps created
+  console.log("Sitemap generation complete!");
 });
 ```
 
 ### `error`
 
-Thrown if there was an error while fetching an URL. Passes an object with the http status code, a message and the url as argument.
+Triggered when there's an error fetching a URL. Passes an object with the HTTP status code, a message, and the URL.
 
 ```js
 generator.on("error", (error) => {
   console.log(error);
-  // => { code: 404, message: 'Not found.', url: 'http://example.com/foo' }
+  // => { code: 404, message: 'Not Found', url: 'http://example.com/missing' }
 });
 ```
 
 ### `ignore`
 
-If an URL matches a disallow rule in the `robots.txt` file or meta robots noindex is present this event is triggered. The URL will not be added to the sitemap. Passes the ignored url as argument.
+Triggered when a URL is ignored (due to robots.txt, noindex meta tag, AMP detection, or custom ignore function). Passes the ignored URL.
 
 ```js
 generator.on("ignore", (url) => {
-  // log ignored url
+  console.log("Ignored:", url);
 });
 ```
