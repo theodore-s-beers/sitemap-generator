@@ -15,13 +15,18 @@ interface CrawlSuccessContext {
   statusCode?: number;
   headers?: Record<string, string>;
   body: string;
-  $: any;
+  $: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+interface CrawlError extends Error {
+  statusCode?: number;
+  code?: string;
 }
 
 interface CrawlErrorContext {
   url: string;
   statusCode?: number;
-  error?: any;
+  error?: CrawlError;
 }
 
 export interface CrawlerHandlers {
@@ -92,13 +97,13 @@ export default (
 
     async failedRequestHandler(
       { request }: CheerioCrawlingContext,
-      error: any,
+      error: Error,
     ) {
       if (handlers.onError) {
         handlers.onError({
           url: request.url,
-          statusCode: error?.statusCode || 500,
-          error,
+          statusCode: (error as CrawlError)?.statusCode || 500,
+          error: error as CrawlError,
         });
       }
     },

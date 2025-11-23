@@ -31,8 +31,8 @@ export interface SitemapGeneratorInstance {
   getCrawler: () => CheerioCrawler;
   getSitemap: () => SitemapRotatorInstance;
   queueURL: (url: string) => Promise<void>;
-  on: (type: string, handler: (data: any) => void) => void;
-  off: (type: string, handler: (data: any) => void) => void;
+  on: (type: string, handler: (data: unknown) => void) => void;
+  off: (type: string, handler: (data: unknown) => void) => void;
 }
 
 export default function SitemapGenerator(
@@ -106,7 +106,7 @@ export default function SitemapGenerator(
       }
 
       const links: string[] = [];
-      $("a[href]").each((_: number, el: any) => {
+      $("a[href]").each((_: number, el: unknown) => {
         const href = $(el).attr("href");
         if (href) {
           try {
