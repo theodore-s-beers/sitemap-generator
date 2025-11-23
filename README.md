@@ -9,6 +9,7 @@ Generates a sitemap by crawling your site. Uses streams to efficiently write the
 This is a maintained and modernized fork of the original [`sitemap-generator`](https://github.com/lgraubner/sitemap-generator) by Lars Graubner. The original project has not been maintained since ca. 2021. This fork includes:
 
 - Migration to ESM (ES modules)
+- Migration to TypeScript with full type definitions
 - Replacement of deprecated `simplecrawler` with modern `crawlee`
 - Updated dependencies and security fixes
 - Modern development setup with Vitest, ESLint 9, and Prettier
