@@ -1,4 +1,4 @@
-export default (unsafe) =>
+export default (unsafe: string): string =>
   unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

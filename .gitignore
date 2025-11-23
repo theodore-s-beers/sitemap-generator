@@ -19,3 +19,6 @@ Thumbs.db
 # npm
 *.tgz
 npm-debug.log*
+
+# Build output
+dist/

@@ -22,16 +22,20 @@
   "license": "MIT",
   "author": "Theodore Beers",
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
     "format": "prettier --write .",
     "knip": "knip",
     "lint": "prettier --check . && eslint .",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "dependencies": {
@@ -41,12 +45,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tsconfig/recommended": "^1.0.13",
     "@types/node": "^24.10.1",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "knip": "^5.70.1",
     "prettier": "3.6.2",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0",
     "vitest": "^4.0.10"
   },
   "engines": {

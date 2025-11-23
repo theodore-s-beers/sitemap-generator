@@ -1,6 +1,39 @@
 import { CheerioCrawler, Configuration } from "crawlee";
+import type { CheerioCrawlingContext } from "crawlee";
 
-export default (uri, options = {}, handlers = {}) => {
+interface CreateCrawlerOptions {
+  maxRequestsPerCrawl?: number;
+  maxConcurrency?: number;
+  timeout?: number;
+  respectRobotsTxt?: boolean;
+  ignoreInvalidSSL?: boolean;
+}
+
+interface CrawlSuccessContext {
+  url: string;
+  depth: number;
+  statusCode?: number;
+  headers?: Record<string, string>;
+  body: string;
+  $: any;
+}
+
+interface CrawlErrorContext {
+  url: string;
+  statusCode?: number;
+  error?: any;
+}
+
+export interface CrawlerHandlers {
+  onSuccess?: (context: CrawlSuccessContext) => Promise<void>;
+  onError?: (context: CrawlErrorContext) => void;
+}
+
+export default (
+  uri: URL,
+  options: CreateCrawlerOptions = {},
+  handlers: CrawlerHandlers = {},
+): CheerioCrawler => {
   // excluded filetypes
   const exclude = [
     "gif",
@@ -43,32 +76,35 @@ export default (uri, options = {}, handlers = {}) => {
     respectRobotsTxtFile: options.respectRobotsTxt ?? true,
     ignoreSslErrors: !!options.ignoreInvalidSSL,
 
-    async requestHandler({ request, response, $ }) {
+    async requestHandler({ request, response, $ }: CheerioCrawlingContext) {
       if (handlers.onSuccess) {
-        const depth = request.userData.depth || 0;
+        const depth = (request.userData.depth as number | undefined) || 0;
         await handlers.onSuccess({
           url: request.url,
           depth,
-          statusCode: response.statusCode,
-          headers: response.headers,
+          statusCode: response?.statusCode,
+          headers: response?.headers as Record<string, string> | undefined,
           body: $.html(),
           $,
         });
       }
     },
 
-    async failedRequestHandler({ request }, error) {
+    async failedRequestHandler(
+      { request }: CheerioCrawlingContext,
+      error: any,
+    ) {
       if (handlers.onError) {
         handlers.onError({
           url: request.url,
-          statusCode: error.statusCode || 500,
+          statusCode: error?.statusCode || 500,
           error,
         });
       }
     },
 
     preNavigationHooks: [
-      async ({ request }) => {
+      async ({ request }: CheerioCrawlingContext) => {
         const url = new URL(request.url);
 
         // File type exclusion

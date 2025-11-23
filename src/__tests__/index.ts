@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import SitemapGenerator from "../index.js";
+import SitemapGenerator, { type SitemapGeneratorInstance } from "../index.js";
 
 describe("#SitemapGenerator", () => {
-  let gen;
+  let gen: SitemapGeneratorInstance;
 
   beforeEach(() => {
     gen = SitemapGenerator("http://foo.bar");

@@ -1,6 +1,14 @@
 import extendFilename from "./helpers/extendFilename.js";
 
-export default (url, filename, sitemapCount) => {
+export default (
+  url: string,
+  filename: string,
+  sitemapCount: number,
+): string => {
+  if (sitemapCount < 1) {
+    throw new Error("sitemapCount must be at least 1");
+  }
+
   const base = url.replace(/\/$/, "");
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
