@@ -111,12 +111,11 @@ export default (
 
     preNavigationHooks: [
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (_context: CheerioCrawlingContext, gotOptions: any) => {
+      async ({ request }: CheerioCrawlingContext, gotOptions: any) => {
         if (options.disableHttp2) {
           gotOptions.http2 = false;
         }
-      },
-      async ({ request }: CheerioCrawlingContext) => {
+
         const url = new URL(request.url);
 
         // File type exclusion
