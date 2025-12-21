@@ -23,6 +23,7 @@ export interface SitemapGeneratorOptions {
   timeout?: number;
   decodeResponses?: boolean;
   ignoreAMP?: boolean;
+  disableHttp2?: boolean;
   ignore?: ((url: string) => boolean) | null;
 }
 
@@ -50,6 +51,7 @@ export default function SitemapGenerator(
     timeout: 30000,
     decodeResponses: true,
     ignoreAMP: true,
+    disableHttp2: false,
     ignore: null,
   };
 

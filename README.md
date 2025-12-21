@@ -160,6 +160,13 @@ Default: `false`
 
 Whether to ignore invalid SSL certificates.
 
+### `disableHttp2`
+
+Type: `boolean`  
+Default: `false`
+
+Whether to disable HTTP/2 support. Useful for environments like [Bun](https://bun.sh/) that may have issues with strict HTTP/2.
+
 ### `timeout`
 
 Type: `number`  

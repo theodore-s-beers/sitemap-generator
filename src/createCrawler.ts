@@ -7,6 +7,7 @@ interface CreateCrawlerOptions {
   timeout?: number;
   respectRobotsTxt?: boolean;
   ignoreInvalidSSL?: boolean;
+  disableHttp2?: boolean;
 }
 
 interface CrawlSuccessContext {
@@ -109,6 +110,12 @@ export default (
     },
 
     preNavigationHooks: [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (_context: CheerioCrawlingContext, gotOptions: any) => {
+        if (options.disableHttp2) {
+          gotOptions.http2 = false;
+        }
+      },
       async ({ request }: CheerioCrawlingContext) => {
         const url = new URL(request.url);
 
