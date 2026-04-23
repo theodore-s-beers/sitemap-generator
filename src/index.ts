@@ -22,7 +22,6 @@ export interface SitemapGeneratorOptions {
   ignoreInvalidSSL?: boolean;
   disableHttp2?: boolean;
   timeout?: number;
-  decodeResponses?: boolean;
   ignoreAMP?: boolean;
   ignore?: ((url: string) => boolean) | null;
 }
@@ -50,7 +49,6 @@ export default function SitemapGenerator(
     ignoreInvalidSSL: false,
     disableHttp2: false,
     timeout: 30000,
-    decodeResponses: true,
     ignoreAMP: true,
     ignore: null,
   };
