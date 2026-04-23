@@ -20,6 +20,7 @@ export interface SitemapGeneratorOptions {
   userAgent?: string;
   respectRobotsTxt?: boolean;
   ignoreInvalidSSL?: boolean;
+  disableHttp2?: boolean;
   timeout?: number;
   decodeResponses?: boolean;
   ignoreAMP?: boolean;
@@ -47,6 +48,7 @@ export default function SitemapGenerator(
     userAgent: "Node/SitemapGenerator",
     respectRobotsTxt: true,
     ignoreInvalidSSL: false,
+    disableHttp2: false,
     timeout: 30000,
     decodeResponses: true,
     ignoreAMP: true,

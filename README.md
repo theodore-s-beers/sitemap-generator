@@ -160,6 +160,13 @@ Default: `false`
 
 Whether to ignore invalid SSL certificates.
 
+### `disableHttp2`
+
+Type: `boolean`
+Default: `false`
+
+Whether to disable HTTP/2 for compatibility with runtimes/environments where support is lacking.
+
 ### `timeout`
 
 Type: `number`  
