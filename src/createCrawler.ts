@@ -7,6 +7,7 @@ interface CreateCrawlerOptions {
   timeout?: number;
   respectRobotsTxt?: boolean;
   ignoreInvalidSSL?: boolean;
+  disableHttp2?: boolean;
 }
 
 interface CrawlSuccessContext {
@@ -109,7 +110,14 @@ export default (
     },
 
     preNavigationHooks: [
-      async ({ request }: CheerioCrawlingContext) => {
+      async (
+        { request }: CheerioCrawlingContext,
+        gotOptions: { http2?: boolean },
+      ) => {
+        if (options.disableHttp2) {
+          gotOptions.http2 = false;
+        }
+
         const url = new URL(request.url);
 
         // File type exclusion
