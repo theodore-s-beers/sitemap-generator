@@ -3,9 +3,10 @@
   "compilerOptions": {
     "declaration": true,
     "module": "NodeNext",
+    "rootDir": "./src",
     "outDir": "./dist",
     "target": "ES2022"
   },
-  "include": ["src/**/*"],
+  "include": ["src"],
   "exclude": ["**/__tests__"]
 }
